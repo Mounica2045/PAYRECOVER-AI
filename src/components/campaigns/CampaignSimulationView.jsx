@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
-import { Sparkles, PlayCircle, Loader2, CheckCircle2, TrendingUp, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle2 } from 'lucide-react';
 import { campaignService } from '../../services/campaignService';
-import { formatCurrency } from '../../data/dashboardData';
 
 export default function CampaignSimulationView({
   campaignData,

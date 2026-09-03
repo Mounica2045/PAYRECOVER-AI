@@ -14,7 +14,7 @@ import { auditService } from '../services/auditService';
 
 export default function Audit({ initialSelectedTxnId }) {
   const [allEvents, setAllEvents] = useState(() => auditService.getAuditEvents());
-  const [safetyEvents, setSafetyEvents] = useState(() => auditService.getSafetyEvents());
+  const [safetyEvents] = useState(() => auditService.getSafetyEvents());
   const [safetyControls] = useState(() => auditService.getSafetyControls());
   const [safetyRules] = useState(() => auditService.getSafetyRules());
 
