@@ -4,20 +4,37 @@ import { auditService } from './auditService';
 
 const SESSION_KEY = 'payrecover_auth_session';
 
-const defaultMerchantAccount = {
-  id: "USR_101",
-  name: "Mounika",
-  email: "merchant@acmecorp.com",
-  role: "Merchant Owner",
-  company: "Acme Corp.",
-  merchantId: "acc_live_99214A",
-  initials: "M",
-  team: [
-    { id: "T1", name: "Mounika", email: "merchant@acmecorp.com", role: "Owner", status: "Active" },
-    { id: "T2", name: "Rahul Sharma", email: "rahul@acmecorp.com", role: "Finance Admin", status: "Active" },
-    { id: "T3", name: "Priya Reddy", email: "priya@acmecorp.com", role: "Analyst", status: "Active" }
-  ]
+const knownAccounts = {
+  "merchant@acmecorp.com": {
+    id: "USR_101",
+    name: "Mounika",
+    email: "merchant@acmecorp.com",
+    role: "Merchant Owner",
+    company: "Acme Corp.",
+    merchantId: "acc_live_99214A",
+    initials: "M",
+    team: [
+      { id: "T1", name: "Mounika", email: "merchant@acmecorp.com", role: "Owner", status: "Active" },
+      { id: "T2", name: "Rahul Sharma", email: "rahul@acmecorp.com", role: "Finance Admin", status: "Active" },
+      { id: "T3", name: "Priya Reddy", email: "priya@acmecorp.com", role: "Analyst", status: "Active" }
+    ]
+  },
+  "apex@merchants.com": {
+    id: "USR_202",
+    name: "Vikram Mehta",
+    email: "apex@merchants.com",
+    role: "Merchant Owner",
+    company: "Apex Retail India",
+    merchantId: "acc_live_88412B",
+    initials: "V",
+    team: [
+      { id: "T1", name: "Vikram Mehta", email: "apex@merchants.com", role: "Owner", status: "Active" },
+      { id: "T2", name: "Neha Gupta", email: "neha@merchants.com", role: "Finance Admin", status: "Active" }
+    ]
+  }
 };
+
+const defaultMerchantAccount = knownAccounts["merchant@acmecorp.com"];
 
 export const authService = {
   // Check if session token exists and is valid
@@ -44,27 +61,33 @@ export const authService = {
     }
   },
 
-  // Perform Sign In / Authentication
-  login({ email, password, remember = true }) {
-    if (!email || !password) {
-      return { success: false, error: "Please enter both email address and password." };
-    }
+  // Authenticate Session via Verified Email OTP (Requirements #7, #9, #10, #11)
+  authenticateWithEmail(email = '') {
+    const cleanEmail = email.trim().toLowerCase();
+    let user;
 
-    if (!email.includes("@")) {
-      return { success: false, error: "Please enter a valid email address." };
+    if (knownAccounts[cleanEmail]) {
+      user = knownAccounts[cleanEmail];
+    } else {
+      // New Merchant Account Onboarding Flow (Requirement #10)
+      const username = cleanEmail.split('@')[0];
+      const domain = cleanEmail.split('@')[1] ? cleanEmail.split('@')[1].split('.')[0] : 'merchant';
+      const formattedCompany = domain.charAt(0).toUpperCase() + domain.slice(1) + ' Payments';
+      const formattedName = username.charAt(0).toUpperCase() + username.slice(1);
+      
+      user = {
+        id: `USR_${Math.floor(1000 + Math.random() * 9000)}`,
+        name: formattedName,
+        email: cleanEmail,
+        role: "Merchant Owner",
+        company: formattedCompany,
+        merchantId: `acc_live_${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        initials: formattedName.charAt(0).toUpperCase(),
+        team: [
+          { id: "T1", name: formattedName, email: cleanEmail, role: "Owner", status: "Active" }
+        ]
+      };
     }
-
-    if (password.length < 6) {
-      return { success: false, error: "Password must be at least 6 characters long." };
-    }
-
-    // Demo account credential match or generic merchant login
-    const user = {
-      ...defaultMerchantAccount,
-      email: email.trim().toLowerCase(),
-      name: email.split("@")[0].charAt(0).toUpperCase() + email.split("@")[0].slice(1),
-      initials: email.charAt(0).toUpperCase()
-    };
 
     const token = `token_live_${Math.random().toString(36).substring(2)}_${Date.now()}`;
     const session = {
@@ -73,26 +96,24 @@ export const authService = {
       loginTime: new Date().toISOString()
     };
 
-    if (remember) {
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-    }
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
 
     // Register Audit Event
     auditService.createAuditEvent({
       type: "Safety Check Passed",
-      transactionId: "AUTH_LOGIN",
+      transactionId: "AUTH_EMAIL_OTP",
       customer: user.company,
       amount: 0,
       actor: user.name,
-      strategy: "Sign In",
+      strategy: "Passwordless Email OTP",
       status: "Passed",
-      description: `Merchant ${user.name} (${user.email}) successfully authenticated session.`
+      description: `Merchant ${user.name} (${user.email}) successfully authenticated via Email OTP.`
     });
 
     return { success: true, user, token };
   },
 
-  // Perform Sign Out / Session Invalidation (Requirement #6)
+  // Perform Sign Out / Session Invalidation (Requirement #14)
   logout() {
     const user = this.getCurrentUser();
     
@@ -113,7 +134,7 @@ export const authService = {
     return true;
   },
 
-  // Update Merchant Account Profile (Requirement #11)
+  // Update Merchant Account Profile (Requirement #15)
   updateMerchantProfile(updatedFields = {}) {
     const currentUser = this.getCurrentUser();
     const updatedUser = {
