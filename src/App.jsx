@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppShell from './components/layout/AppShell';
 import Dashboard from './pages/Dashboard';
 import Payments from './pages/Payments';
@@ -9,6 +9,9 @@ import Campaigns from './pages/Campaigns';
 import Intelligence from './pages/Intelligence';
 import Audit from './pages/Audit';
 import DesignShowcase from './pages/DesignShowcase';
+import Login from './pages/Login';
+
+import { authService } from './services/authService';
 
 import {
   AnalyticsPlaceholder,
@@ -17,8 +20,13 @@ import {
 } from './pages/placeholders/Placeholders';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => authService.isAuthenticated());
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [selectedTxnId, setSelectedTxnId] = useState(null);
+
+  useEffect(() => {
+    setIsAuthenticated(authService.isAuthenticated());
+  }, []);
 
   const handleSearchResultClick = (result) => {
     if (result.type === 'Transaction') {
@@ -53,6 +61,24 @@ export default function App() {
     }
   };
 
+  const handleSignOut = () => {
+    authService.logout();
+    setIsAuthenticated(false);
+    setCurrentPage('dashboard');
+  };
+
+  // Protected Route Guard (Requirements #2, #6, #7, #8)
+  if (!isAuthenticated) {
+    return (
+      <Login 
+        onLoginSuccess={() => {
+          setIsAuthenticated(true);
+          setCurrentPage('dashboard');
+        }}
+      />
+    );
+  }
+
   return (
     <AppShell 
       currentPage={currentPage}
@@ -63,6 +89,7 @@ export default function App() {
         }
       }}
       onSelectSearchResult={handleSearchResultClick}
+      onSignOut={handleSignOut}
     >
       {currentPage === 'dashboard' && (
         <Dashboard 

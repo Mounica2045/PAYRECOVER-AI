@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
 
-export default function AppShell({ currentPage, setCurrentPage, children, onSelectSearchResult }) {
+export default function AppShell({ currentPage, setCurrentPage, children, onSelectSearchResult, onSignOut }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -25,6 +25,7 @@ export default function AppShell({ currentPage, setCurrentPage, children, onSele
         <Navbar 
           onMenuClick={() => setIsMobileMenuOpen(true)}
           onSelectSearchResult={onSelectSearchResult}
+          onSignOut={onSignOut}
         />
 
         {/* Scrollable Main Content Container */}

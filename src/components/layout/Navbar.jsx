@@ -4,7 +4,7 @@ import GlobalSearch from '../search/GlobalSearch';
 import NotificationDropdown from '../notifications/NotificationDropdown';
 import UserMenu from '../navigation/UserMenu';
 
-export default function Navbar({ onMenuClick, onSelectSearchResult }) {
+export default function Navbar({ onMenuClick, onSelectSearchResult, onSignOut }) {
   return (
     <header className="h-16 bg-white border-b border-slate-200/80 sticky top-0 z-30 px-4 lg:px-8 flex items-center justify-between gap-4">
       {/* Left Mobile Menu Toggle & Brand */}
@@ -41,7 +41,7 @@ export default function Navbar({ onMenuClick, onSelectSearchResult }) {
 
         <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />
 
-        <UserMenu />
+        <UserMenu onSignOut={onSignOut} />
       </div>
     </header>
   );
